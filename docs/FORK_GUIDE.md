@@ -97,3 +97,33 @@ Write down the route, input, permission assumptions, lookup or service operation
 Read [CONTRIBUTING.md](../CONTRIBUTING.md) and [AGENTS.md](../AGENTS.md) before proposing changes. Keep fork-specific orientation separate from upstream product claims. Record the revision, commands actually run, results, and what remains unchecked. Disclose AI assistance and keep draft status until human review; the contribution policy asks contributors themselves to answer review questions.
 
 This guide was checked against public repository sources on 2026-10-14. Build, lint, application startup, database tests, and browser tests were not executed as part of writing it. No speed, compatibility, or production-readiness result is implied.
+
+## Worked diagnosis: why a repository lookup can return 404
+
+The `GetByID` handler in [repo.go](../routers/api/v1/repo/repo.go) documents `GET /repositories/{id}`. Its source distinguishes several cases that can look identical to an API client:
+
+| Handler stage | Source outcome | Investigation |
+| --- | --- | --- |
+| Model lookup says the repository does not exist | Not-found response | Verify the ID in an authorized test fixture |
+| Model lookup returns another error | Internal-error response | Inspect the server-side error with secrets removed |
+| Token cannot access the repository | Not-found response | Check the intended token's repository scope without printing the token |
+| Permission lookup fails | Internal-error response | Inspect the permission lookup and its dependencies |
+| User has no unit access | Not-found response | Check the test user's repository/unit access |
+| Checks succeed | Converted repository response with status 200 | Inspect the permission-aware conversion |
+
+Thus, a 404 does not prove that an ID is absent. Do not “fix” the symptom by removing permission checks or widening access. This is a trace of the handler, not an exhaustive description of authentication middleware or every route failure.
+
+A source-only investigation can continue with:
+
+```sh
+git grep -n 'repo.GetByID' -- routers/api/v1
+git grep -n 'TokenCanAccessRepo' -- services modules routers
+git grep -n 'GetDoerRepoPermission' -- models/perm
+git grep -n 'repoGetByID' -- tests/integration routers/api/v1
+```
+
+Read the route registration and middleware before interpreting handler behavior. For a disposable test setup, build a matrix of an existing accessible repository, a nonexistent ID, and an existing repository outside the caller's allowed scope. Record the status and sanitized response for each; the last case must not expose the inaccessible repository's details. These are proposed checks, not test results.
+
+### Keeping this guide current
+
+When routes, manifests, or Make targets change, verify the affected command against the same revision, update its source link, and recheck the worked example's branch conditions. Preserve the difference between source inspection and a request actually executed. A renamed symbol requires updating both the prose and its search command; a changed permission model needs renewed review of the diagnostic table.
