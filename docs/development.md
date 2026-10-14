@@ -35,6 +35,10 @@ requirements. A fork change is not an upstream release.
 
 ## Codebase map
 
+For a pinned inventory of Go source directories, frontend/build boundaries,
+selected source contracts, and the remaining documentation work, use the
+[source architecture and package catalogue](source-architecture.md).
+
 For backend layering and dependency direction, read the
 [backend architecture guide](guidelines-backend.md) before adding imports.
 

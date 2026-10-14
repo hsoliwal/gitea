@@ -38,6 +38,7 @@ release or CI status for this fork. The M3 direction above does not change Gitea
 Go/frontend architecture or establish a performance result.
 
 - [Fork checkout and source map](docs/development.md#working-in-the-hsoliwal-fork)
+- [Source architecture, package catalogue, and coverage](docs/source-architecture.md)
 - [Build prerequisites](docs/build-setup.md) and [build/package options](docs/build-source.md)
 - [Test suites and database setup](docs/testing.md)
 - [Contribution guidelines](CONTRIBUTING.md), [agent guidance](AGENTS.md), and [security policy](SECURITY.md)
