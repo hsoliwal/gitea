@@ -33,7 +33,7 @@ follows below; upstream authorship, licenses, and project identity remain intact
 
 This is [hsoliwal/gitea](https://github.com/hsoliwal/gitea), forked from
 [go-gitea/gitea](https://github.com/go-gitea/gitea). The upstream badges, releases,
-services, and community links below retain their original meaning; they are not
+services, and community links in this README retain their original meaning; they are not
 release or CI status for this fork. The M3 direction above does not change Gitea's
 Go/frontend architecture or establish a performance result.
 
