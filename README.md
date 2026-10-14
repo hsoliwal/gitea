@@ -49,6 +49,8 @@ or use container (docker/podman/etc) to deploy on your own server with the [offi
 
 ## Documentation
 
+For this fork, start with the [developer entry guide](docs/FORK_GUIDE.md): architecture, command reference, and a worked source-reading exercise.
+
 You can find comprehensive documentation on our official [documentation website](https://docs.gitea.com/).
 
 It includes installation, administration, usage, development, contributing guides, and more to help you get started and explore all features effectively.
