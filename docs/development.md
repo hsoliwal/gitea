@@ -11,6 +11,48 @@ Area-specific guidelines:
 - [Frontend development guidelines](guidelines-frontend.md)
 - [Refactoring guidelines](guidelines-refactoring.md)
 
+## Working in the hsoliwal fork
+
+To work on this fork rather than upstream, obtain its source explicitly:
+
+```bash
+git clone https://github.com/hsoliwal/gitea.git
+cd gitea
+```
+
+Use the toolchain declarations in [go.mod](../go.mod) and
+[package.json](../package.json), then follow [build-setup.md](build-setup.md).
+Do not assume that instructions for a released Gitea version match this
+development checkout. `make help` lists the checked-out targets;
+the [Makefile](../Makefile) is the source of truth.
+
+Open fork-specific pull requests against
+[hsoliwal/gitea](https://github.com/hsoliwal/gitea/pulls), based on `main`.
+Upstream contributions follow the separate
+[go-gitea/gitea](https://github.com/go-gitea/gitea) review process and the
+[contributor guide](../CONTRIBUTING.md), including its AI-assistance disclosure
+requirements. A fork change is not an upstream release.
+
+## Codebase map
+
+For backend layering and dependency direction, read the
+[backend architecture guide](guidelines-backend.md) before adding imports.
+
+| Work area | Entry points |
+| --- | --- |
+| Process startup and commands | [main.go](../main.go), [cmd](../cmd), [web command](../cmd/web.go) |
+| Web and API request handling | [routers/web](../routers/web), [routers/api](../routers/api) |
+| Application services | [services](../services) |
+| Persistence and migrations | [models](../models), [models/db](../models/db), [modelmigration](../modelmigration) |
+| Shared functionality and configuration | [modules](../modules), [modules/setting](../modules/setting), [configuration example](../custom/conf/app.example.ini) |
+| User interface | [templates](../templates), [web_src](../web_src), [frontend guidelines](guidelines-frontend.md) |
+| Generated frontend assets | [public](../public); edit the corresponding source rather than treating build output as the source of truth |
+| Integration and browser tests | [tests/integration](../tests/integration), [tests/e2e](../tests/e2e), [testing guide](testing.md) |
+
+Use a disposable local instance for development and test data. Do not point test
+commands at production storage or databases, or commit a populated `app.ini`,
+access tokens, user repositories, or logs containing private information.
+
 ## Building
 
 To build Gitea for development, run:
@@ -26,7 +68,7 @@ only needed when packaging a self-contained build, so leave it out during
 development.
 
 See `make help` for all available targets, and the workflows in
-[`.github/workflows`](https://github.com/go-gitea/gitea/tree/main/.github/workflows)
+[`.github/workflows`](../.github/workflows)
 to see how continuous integration builds and checks Gitea.
 
 ## Building continuously
@@ -70,6 +112,22 @@ make lint-frontend
 Many linters can fix issues automatically with `make lint-fix` (or the scoped
 `make lint-backend-fix` / `make lint-frontend-fix`). The combined consistency
 checks that CI runs are available as `make checks`.
+
+### Documentation checks
+
+The [Makefile](../Makefile)'s `lint-md` target checks root-level Markdown files.
+It does not recursively cover `docs/`. After frontend dependencies are available,
+check an edited nested document explicitly, for example:
+
+```bash
+make lint-md
+pnpm exec markdownlint docs/development.md
+```
+
+The rules are in [.markdownlint.yaml](../.markdownlint.yaml).
+Review relative links and examples as well: Markdown lint is not a build,
+a link checker, a database test, or a security review. Report what was run and
+what remains untested; use [testing.md](testing.md) when behavior changes.
 
 ## Building and adding SVGs
 

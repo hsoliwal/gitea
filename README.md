@@ -29,6 +29,20 @@ follows below; upstream authorship, licenses, and project identity remain intact
 
 [繁體中文](./README.zh-tw.md) | [简体中文](./README.zh-cn.md)
 
+## Working with this fork
+
+This is [hsoliwal/gitea](https://github.com/hsoliwal/gitea), forked from
+[go-gitea/gitea](https://github.com/go-gitea/gitea). The upstream badges, releases,
+services, and community links below retain their original meaning; they are not
+release or CI status for this fork. The M3 direction above does not change Gitea's
+Go/frontend architecture or establish a performance result.
+
+- [Fork checkout and source map](docs/development.md#working-in-the-hsoliwal-fork)
+- [Build prerequisites](docs/build-setup.md) and [build/package options](docs/build-source.md)
+- [Test suites and database setup](docs/testing.md)
+- [Contribution guidelines](CONTRIBUTING.md), [agent guidance](AGENTS.md), and [security policy](SECURITY.md)
+- [License and upstream attribution](LICENSE)
+
 ## Purpose
 
 The goal of Gitea is to make the easiest, fastest, and most painless way of
