@@ -35,18 +35,23 @@ The backend is split into top-level packages, each with a focused responsibility
 
 ### Dependency direction
 
-Dependencies only flow in one direction:
+The intended high-level dependency direction is:
 
 ```text
 cmd → routers → services → models → modules
 ```
 
-A package on the left may import a package on its right, but never the reverse.
+Prefer dependencies from left to right when designing new code. This diagram is
+not an exhaustive description of the current import graph: for example,
+[`modules/indexer/code`](../modules/indexer/code/indexer.go) imports `models/db`
+and `models/repo`. Inspect the actual callers and imports before assuming a
+package is independent of a higher layer. See the
+[source architecture guide](source-architecture.md) for the pinned reading map.
 
 ### Naming conventions
 
 - Top-level packages use the plural form: `services`, `models`, `routers`.
-- Subpackages use the singular form: `services/user`, `models/repository`.
+- Subpackages use the singular form: `services/user`, `models/repo`.
 
 When packages from different layers share a name, use a snake_case import alias to
 disambiguate:
