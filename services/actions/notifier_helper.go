@@ -5,6 +5,7 @@ package actions
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -25,6 +26,7 @@ import (
 	"gitea.dev/modules/log"
 	"gitea.dev/modules/setting"
 	api "gitea.dev/modules/structs"
+	"gitea.dev/modules/util"
 	webhook_module "gitea.dev/modules/webhook"
 	"gitea.dev/services/convert"
 )
@@ -67,6 +69,8 @@ type notifyInput struct {
 	Ref         git.RefName
 	Payload     api.Payloader
 	PullRequest *issues_model.PullRequest
+
+	encodedPayload string // cached by EncodedPayload
 }
 
 func newNotifyInput(repo *repo_model.Repository, doer *user_model.User, event webhook_module.HookEventType) *notifyInput {
@@ -109,6 +113,18 @@ func (input *notifyInput) WithPullRequest(pr *issues_model.PullRequest) *notifyI
 		input.Ref = git.RefName(pr.GetGitHeadRefName())
 	}
 	return input
+}
+
+// EncodedPayload marshals Payload once, as one event can start repo, scheduled and scoped workflows
+func (input *notifyInput) EncodedPayload() (string, error) {
+	if input.encodedPayload == "" {
+		p, err := json.Marshal(input.Payload)
+		if err != nil {
+			return "", fmt.Errorf("EncodedPayload: %w", err)
+		}
+		input.encodedPayload = string(p)
+	}
+	return input.encodedPayload, nil
 }
 
 func (input *notifyInput) Notify(ctx context.Context) {
@@ -337,16 +353,16 @@ func handleWorkflows(
 		return nil
 	}
 
-	p, err := json.Marshal(input.Payload)
+	payload, err := input.EncodedPayload()
 	if err != nil {
-		return fmt.Errorf("json.Marshal: %w", err)
+		return err
 	}
 
 	isForkPullRequest := isForkPullRequestInput(input)
 
 	for _, dwf := range detectedWorkflows {
 		// repo-level run: the workflow content is this repo at dwf.SourceCommitSHA
-		if err := buildApproveAndInsertRun(ctx, input, ref, commit, string(p), isForkPullRequest, dwf, input.Repo.ID, false); err != nil {
+		if err := buildApproveAndInsertRun(ctx, input, ref, commit, payload, isForkPullRequest, dwf, input.Repo.ID, false); err != nil {
 			log.Error("repo %s: %v", input.Repo.FullName(), err)
 			continue
 		}
@@ -418,6 +434,10 @@ func buildApproveAndInsertRun(
 	}
 
 	if err := PrepareRunAndInsert(ctx, dwf.Content, run, nil); err != nil {
+		if errors.Is(err, util.ErrInvalidArgument) && !isScopedRun {
+			insertInvalidWorkflowRun(ctx, run, err)
+			return nil
+		}
 		return fmt.Errorf("PrepareRunAndInsert: %w", err)
 	}
 	return nil
@@ -585,8 +605,9 @@ func handleSchedules(
 		log.Error("CountSchedules: %v", err)
 		return err
 	} else if count > 0 {
-		if err := CleanRepoScheduleTasks(ctx, input.Repo); err != nil {
-			log.Error("CleanRepoScheduleTasks: %v", err)
+		// replacing the schedules leaves their in-progress runs alone, as GitHub does
+		if err := actions_model.DeleteScheduleTaskByRepo(ctx, input.Repo.ID); err != nil {
+			log.Error("DeleteScheduleTaskByRepo: %v", err)
 		}
 	}
 
@@ -595,9 +616,9 @@ func handleSchedules(
 		return nil
 	}
 
-	p, err := json.Marshal(input.Payload)
+	payload, err := input.EncodedPayload()
 	if err != nil {
-		return fmt.Errorf("json.Marshal: %w", err)
+		return err
 	}
 
 	crons := make([]*actions_model.ActionSchedule, 0, len(detectedWorkflows))
@@ -625,7 +646,7 @@ func handleSchedules(
 			Ref:           ref.String(),
 			CommitSHA:     commit.ID.String(),
 			Event:         input.Event,
-			EventPayload:  string(p),
+			EventPayload:  payload,
 			Specs:         schedules,
 			Content:       dwf.Content,
 		}
@@ -709,9 +730,9 @@ func detectAndHandleScopedWorkflows(
 		return nil
 	}
 
-	p, err := json.Marshal(input.Payload)
+	payload, err := input.EncodedPayload()
 	if err != nil {
-		return fmt.Errorf("json.Marshal: %w", err)
+		return err
 	}
 	isForkPullRequest := isForkPullRequestInput(input)
 	actionsConfig := input.Repo.MustGetUnit(ctx, unit_model.TypeActions).ActionsConfig()
@@ -759,7 +780,7 @@ func detectAndHandleScopedWorkflows(
 				continue
 			}
 
-			if err := buildApproveAndInsertRun(ctx, input, ref, consumerCommit, string(p), isForkPullRequest, dwf, sourceRepo.ID, true); err != nil {
+			if err := buildApproveAndInsertRun(ctx, input, ref, consumerCommit, payload, isForkPullRequest, dwf, sourceRepo.ID, true); err != nil {
 				log.Error("scoped workflows: source %s workflow %s: %v", sourceRepo.FullName(), dwf.EntryName, err)
 				continue
 			}
