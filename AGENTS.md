@@ -24,3 +24,14 @@
 - Run single tests with `go test -run '^TestName$' ./modulepath/` for Go, `pnpm exec vitest <path-filter>` for TS and `GITEA_TEST_E2E_FLAGS='<filepath>' make test-e2e` for e2e
 - Write the fewest, fastest tests covering the behavior, extending an existing one where possible. Prefer unit tests where logic is testable in isolation
 - Aim for sub-2s per integration test and sub-4s per e2e test. Wait on a deterministic condition rather than `sleep`, and prefer semantic locators in e2e tests
+
+
+## Superset merge and history-audit rule (2026-11-18)
+
+Read [.github/MERGE_RULE.md](.github/MERGE_RULE.md) before changing an existing implementation or integrating any branch or PR.
+Preserve the supported additive API/behavior superset and select implementations by correctness, predictability, measured performance, then elegance.
+Audit all reachable history back to every root, all branches/tags and all PR states for lost code or regressions; preserve append-only history.
+Record actual UTC coverage and remaining work in [.github/HISTORY_AUDIT.tsv](.github/HISTORY_AUDIT.tsv); policy installation is not a completed source-history audit.
+Prefer verified Apache-2.0 sources and independent implementations while preserving all existing third-party rights; LLM rewriting does not remove license obligations.
+Detailed private recipe/proof records remain in canonical Synexia; the compact local policy and checkpoint make the rule discoverable here.
+<!-- MERGE-SUPERSET-HISTORY-20261118-2 -->
