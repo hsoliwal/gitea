@@ -13,6 +13,10 @@ permissions: {}
 
 jobs:
   branches:
+    # Upstream release automation: publishes signed binaries to R2, images to Docker Hub/GHCR
+    # and snaps to the Snap Store with go-gitea secrets and namespace runners. Skipping this
+    # job skips nightly-binary, nightly-container and nightly-snap, which all need it.
+    if: github.repository == 'go-gitea/gitea'
     runs-on: ubuntu-latest
     permissions:
       actions: read
